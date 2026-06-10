@@ -3,7 +3,7 @@ import type { PageProps } from "../types";
 import {
   Gavel, Eye, Search, Upload, Download, Send, Loader2, Plus,
   Clock, CheckCircle, AlertTriangle, Shield, FileText, Edit3,
-  Trash2, Save, MessageSquare, Timer, Bell, Mail, Smartphone,
+  Trash2, Save, MessageSquare,
   XCircle, Activity, ExternalLink,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -236,11 +236,11 @@ export function RecursosPage(props?: PageProps) {
     if (!editalId) return;
     setMonitorLoading(true);
     try {
-      const session = await createSession("monitorar-janela") as Record<string, unknown>;
+      const session = await createSession("monitorar-janela");
       const sid = String(session.session_id || session.id);
       const edital = editais.find(e => e.id === editalId);
       const prompt = `Monitore a janela de recurso do edital ${edital?.numero || editalId}. Informe o status atual: se a janela de recurso esta aberta, aguardando ou encerrada. Se houver prazo, informe.`;
-      const resp = await sendMessage(sid, prompt);
+      await sendMessage(sid, prompt);
       setMonitoramento(prev => ({
         ...prev,
         editalId,
@@ -300,7 +300,7 @@ export function RecursosPage(props?: PageProps) {
       }
 
       // Iniciar sessão de chat para perguntas complementares
-      const session = await createSession("analise-vencedora") as Record<string, unknown>;
+      const session = await createSession("analise-vencedora");
       setChatSessionId(String(session.session_id || session.id));
     } catch (err) {
       console.error("Erro ao analisar proposta:", err);
@@ -326,33 +326,6 @@ export function RecursosPage(props?: PageProps) {
       setChatLoading(false);
     }
   }, [chatInput, chatSessionId]);
-
-  function parseInconsistenciasVencedora(text: string): InconsistenciaVencedora[] {
-    const results: InconsistenciaVencedora[] = [];
-    const lines = text.split("\n");
-    let counter = 0;
-    for (const line of lines) {
-      const cells = line.split("|").map(c => c.trim()).filter(Boolean);
-      if (cells.length >= 3) {
-        const first = cells[0].replace(/^#+\s*/, "").trim();
-        if (first === "#" || first === "---" || first.startsWith("-") || first === "Item") continue;
-        const num = parseInt(first);
-        if (isNaN(num) && counter === 0) continue;
-        counter++;
-        const gravidade = cells.length >= 4
-          ? (cells[3].toUpperCase().includes("ALTA") ? "ALTA" : cells[3].toUpperCase().includes("MEDIA") || cells[3].toUpperCase().includes("MÉDIA") ? "MEDIA" : "BAIXA")
-          : "MEDIA";
-        results.push({
-          id: counter,
-          item: cells[0] || String(counter),
-          inconsistencia: cells[1] || "",
-          motivacao: cells[2] || "",
-          gravidade: gravidade as "ALTA" | "MEDIA" | "BAIXA",
-        });
-      }
-    }
-    return results;
-  }
 
   // ── Laudos handlers ──
 
@@ -486,7 +459,6 @@ export function RecursosPage(props?: PageProps) {
   const handleRegistrarSubmissao = async () => {
     if (!submissaoLaudo || !submissaoProtocolo.trim()) return;
     try {
-      const token = localStorage.getItem("editais_ia_access_token");
       await crudUpdate("recursos-detalhados", submissaoLaudo.id, {
         status: "protocolado",
         observacoes: `Protocolo: ${submissaoProtocolo} | Submetido em: ${new Date().toLocaleString("pt-BR")}`,

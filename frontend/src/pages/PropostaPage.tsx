@@ -3,12 +3,12 @@ import type { PageProps } from "../types";
 import {
   FileEdit, Eye, Download, Trash2, Send, Lightbulb, Bold, Italic,
   Heading1, Heading2, List, Table, ToggleLeft, ToggleRight,
-  AlertTriangle, CheckCircle, XCircle, Shield, FileCheck, Package,
-  Loader2, ChevronDown, ChevronUp, Scissors, Archive,
+  AlertTriangle, CheckCircle, Shield, FileCheck,
+  Loader2, Scissors, Archive,
 } from "lucide-react";
 import {
   Card, DataTable, ActionButton, FilterBar, Modal, FormField,
-  TextInput, SelectInput, TabPanel,
+  TextInput, SelectInput,
 } from "../components/common";
 import type { Column } from "../components/common";
 import { crudList, crudCreate, crudUpdate, crudDelete } from "../api/crud";

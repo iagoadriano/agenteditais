@@ -17,8 +17,8 @@ interface ActionButtonProps {
   icon?: ReactNode;
   label: string;
   onClick: () => void;
-  // "neutral" e "outline" já eram usados em runtime pelas pages (29 call sites)
-  variant?: "primary" | "secondary" | "danger" | "success" | "neutral" | "outline";
+  // "neutral", "outline" e "warning" já eram usados em runtime pelas pages
+  variant?: "primary" | "secondary" | "danger" | "success" | "neutral" | "outline" | "warning";
   disabled?: boolean;
   loading?: boolean;
   size?: "sm" | "md";
