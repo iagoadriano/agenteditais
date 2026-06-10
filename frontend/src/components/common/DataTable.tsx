@@ -24,7 +24,9 @@ interface DataTableProps<T> {
   defaultSortDirection?: "asc" | "desc";
 }
 
-export function DataTable<T extends Record<string, unknown>>({
+// T extends object (não Record<string, unknown>): interfaces sem index
+// signature também são aceitas — era a causa de ~150 erros de build nas pages
+export function DataTable<T extends object>({
   data,
   columns,
   onRowClick,

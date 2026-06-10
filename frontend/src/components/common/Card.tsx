@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import type { ReactNode, CSSProperties } from "react";
 import { HelpCircle } from "lucide-react";
 
 interface CardProps {
@@ -11,6 +11,7 @@ interface CardProps {
   collapsible?: boolean;
   defaultCollapsed?: boolean;
   helpText?: string;
+  style?: CSSProperties;
 }
 
 export function Card({
@@ -21,9 +22,10 @@ export function Card({
   actions,
   variant = "default",
   helpText,
+  style,
 }: CardProps) {
   return (
-    <div className={`card card-${variant}`}>
+    <div className={`card card-${variant}`} style={style}>
       {(title || actions) && (
         <div className="card-header">
           <div className="card-header-left">

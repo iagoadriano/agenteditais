@@ -1,8 +1,11 @@
-import { ReactNode, useEffect } from "react";
+import { useEffect } from "react";
+import type { ReactNode } from "react";
 import { X } from "lucide-react";
 
 interface ModalProps {
-  isOpen: boolean;
+  // opcional (default true): várias pages controlam a abertura por
+  // renderização condicional `{show && <Modal ...>}` sem passar isOpen
+  isOpen?: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
@@ -11,7 +14,7 @@ interface ModalProps {
 }
 
 export function Modal({
-  isOpen,
+  isOpen = true,
   onClose,
   title,
   children,
