@@ -295,7 +295,7 @@ export function Dashboard({ onNavigate, onOpenChat }: DashboardProps) {
               onChange={(e) => setBuscaRapida(e.target.value)}
             />
           </div>
-          <button className="dashboard-btn secondary" onClick={loadStats} disabled={loading} title="Atualizar">
+          <button className="dashboard-btn secondary" onClick={() => loadStats()} disabled={loading} title="Atualizar">
             <RefreshCw size={16} className={loading ? "spin" : ""} />
           </button>
           {/* Sininho de notificações */}
@@ -365,7 +365,7 @@ export function Dashboard({ onNavigate, onOpenChat }: DashboardProps) {
         <div className="portfolio-error" style={{ marginBottom: "16px" }}>
           <AlertCircle size={16} />
           <span>{error}</span>
-          <button onClick={loadStats}>Tentar novamente</button>
+          <button onClick={() => loadStats()}>Tentar novamente</button>
         </div>
       )}
 

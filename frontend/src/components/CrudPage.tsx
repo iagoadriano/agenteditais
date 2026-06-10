@@ -13,7 +13,7 @@ export interface FieldConfig {
   required?: boolean;
   options?: { value: string; label: string }[];
   placeholder?: string;
-  width?: "full" | "half" | "third";
+  width?: "full" | "half" | "third" | "quarter";
   hidden?: boolean;
   fkTable?: string;
   fkLabel?: string;
@@ -125,7 +125,7 @@ export function CrudPage({ config }: CrudPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [passwordVisible, setPasswordVisible] = useState<Record<string, boolean>>({});
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [isEmpresaScopedFromSchema, setIsEmpresaScopedFromSchema] = useState(false);
@@ -145,8 +145,6 @@ export function CrudPage({ config }: CrudPageProps) {
   const [parentItems, setParentItems] = useState<Record<string, unknown>[]>([]);
   const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
   const [parentLoading, setParentLoading] = useState(false);
-  const [parentSearch, setParentSearch] = useState("");
-  const parentDebounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   // ─── Grandparent selector state (optional, e.g. Área → Classe → Subclasse)
   const hasGrandparent = Boolean(grandparentTable && grandparentFk);
@@ -240,21 +238,6 @@ export function CrudPage({ config }: CrudPageProps) {
       setFkOptions(opts);
     })();
   }, [fields]);
-
-  const handleParentSearch = (value: string) => {
-    setParentSearch(value);
-    if (parentDebounceRef.current) clearTimeout(parentDebounceRef.current);
-    parentDebounceRef.current = setTimeout(() => {
-      loadParentItems(value);
-    }, 300);
-  };
-
-  const handleSelectParent = (parentId: string) => {
-    setSelectedParentId(parentId);
-    setSelectedId(null);
-    setIsNew(false);
-    setFormData({});
-  };
 
   // ─── Load items ────────────────────────────────────────────────────────────
 
@@ -843,7 +826,7 @@ export function CrudPage({ config }: CrudPageProps) {
         )}
 
         {/* Custom edit form (replaces default form on edit) */}
-        {!isNew && selectedId && renderEditForm && formData.id && (
+        {!isNew && selectedId && renderEditForm && Boolean(formData.id) && (
           <Fragment key={String(formData.id)}>
             {renderEditForm({
               item: formData,

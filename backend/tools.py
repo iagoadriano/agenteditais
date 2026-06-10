@@ -13026,3 +13026,55 @@ def download_pdf_edital_bg(edital_id: str, user_id: str) -> Dict[str, Any]:
 
 TOOLS_MAP["download_pdf_edital_bg"] = download_pdf_edital_bg
 
+
+
+# =============================================================================
+# FASE 2 — INTELIGÊNCIA COMERCIAL: SCORE GO/NO-GO (RF-SCO-002/003)
+# =============================================================================
+
+def tool_score_comercial(user_id: str, empresa_id: str = None,
+                         edital_numero: str = None) -> Dict[str, Any]:
+    """
+    Calcula o score de aderência comercial de um edital para a empresa
+    (logística, porte x valor LC 123/2006, histórico de vitórias, prazo)
+    e emite recomendação GO / AVALIAR / NO_GO.
+
+    Motor compartilhado com a rota REST /api/inteligencia/.../score-comercial
+    (backend/inteligencia_comercial.py).
+    """
+    from models import get_db, Edital, Empresa
+    from inteligencia_comercial import avaliar_score_comercial
+
+    if not edital_numero:
+        return {"success": False,
+                "error": "Informe o número do edital (ex: PE-001/2026)."}
+
+    db = get_db()
+    try:
+        q = db.query(Edital).filter(Edital.numero.ilike(f"%{edital_numero}%"))
+        if empresa_id:
+            q = q.filter(Edital.empresa_id == empresa_id)
+        edital = q.first()
+        if not edital:
+            return {"success": False,
+                    "error": f"Edital '{edital_numero}' não encontrado."}
+
+        empresa = db.query(Empresa).filter(
+            Empresa.id == empresa_id).first() if empresa_id else None
+
+        resultado = avaliar_score_comercial(db, edital, empresa, empresa_id)
+        resultado.update({
+            "success": True,
+            "edital_id": edital.id,
+            "edital_numero": edital.numero,
+            "orgao": edital.orgao,
+            "uf": edital.uf,
+        })
+        return resultado
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+    finally:
+        db.close()
+
+
+TOOLS_MAP["score_comercial"] = tool_score_comercial

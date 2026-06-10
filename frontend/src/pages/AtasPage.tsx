@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import type { PageProps } from "../types";
-import { Search, FileText, Download, Loader2, Plus, BarChart2 } from "lucide-react";
+import { Search, Download, Loader2 } from "lucide-react";
 import { Card, DataTable, ActionButton, FormField, TextInput, TextArea, SelectInput, Modal, TabPanel } from "../components/common";
 import type { Column } from "../components/common";
 

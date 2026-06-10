@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import type { PageProps } from "../types";
-import { Flag, Bell, Clock, AlertTriangle, Plus, CheckCircle, Calendar, Eye, MoreVertical, Download, X, Mail, Smartphone, MessageSquare } from "lucide-react";
+import { Flag, Bell, Clock, Plus, CheckCircle, Calendar, Eye, MoreVertical, Download, X, Mail, Smartphone, MessageSquare } from "lucide-react";
 import { Card, DataTable, ActionButton, Modal, FormField, SelectInput, Checkbox } from "../components/common";
 import type { Column } from "../components/common";
 import { crudList, crudUpdate } from "../api/crud";
@@ -75,7 +75,7 @@ export function FlagsPage({ onSendToChat }: PageProps) {
     setLoading(true);
     try {
       const res = await crudList("alertas", { limit: 500 });
-      setAlertas((res.items || []) as Alerta[]);
+      setAlertas((res.items || []) as unknown as Alerta[]);
     } catch (e) {
       console.error("Erro ao carregar alertas:", e);
     }
@@ -89,7 +89,6 @@ export function FlagsPage({ onSendToChat }: PageProps) {
   const disparados = alertas.filter(a => a.status === "disparado").length;
   const lidos = alertas.filter(a => a.status === "lido").length;
   const cancelados = alertas.filter(a => a.status === "cancelado").length;
-  const silenciados = alertas.filter(a => a.status === "silenciado").length;
 
   // Criticidade counts (apenas ativos)
   const ativosAll = alertas.filter(a => a.status === "agendado" || a.status === "disparado");
@@ -197,9 +196,9 @@ export function FlagsPage({ onSendToChat }: PageProps) {
 
   const getCanais = (a: Alerta) => (
     <div style={{ display: "flex", gap: 4 }}>
-      {a.canal_email && <Mail size={14} color="#6b7280" title="Email" />}
-      {a.canal_push && <Smartphone size={14} color="#6b7280" title="Push" />}
-      {a.canal_sms && <MessageSquare size={14} color="#6b7280" title="SMS" />}
+      {a.canal_email && <span title="Email"><Mail size={14} color="#6b7280" /></span>}
+      {a.canal_push && <span title="Push"><Smartphone size={14} color="#6b7280" /></span>}
+      {a.canal_sms && <span title="SMS"><MessageSquare size={14} color="#6b7280" /></span>}
     </div>
   );
 

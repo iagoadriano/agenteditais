@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import type { PageProps } from "../types";
 import { Mail, Settings, FileText, Send, RefreshCw, CheckCircle, AlertCircle, Clock, Edit2, Save, Plus, X, Eye, Bold, Italic, Link, Percent } from "lucide-react";
-import { Card, DataTable, ActionButton, Modal, FormField, TextInput, SelectInput } from "../components/common";
+import { Card, DataTable, ActionButton, Modal, FormField, SelectInput } from "../components/common";
 import type { Column } from "../components/common";
 import { crudList, crudUpdate, crudCreate, crudDelete } from "../api/crud";
 import { testarSMTP, reenviarEmailFila } from "../api/sprint6";
@@ -46,7 +46,7 @@ interface EmailQueueItem {
   created_at: string | null;
 }
 
-export function SMTPPage({ onSendToChat }: PageProps) {
+export function SMTPPage(_props: PageProps) {
   const [activeTab, setActiveTab] = useState<"config" | "templates" | "fila">("config");
 
   // Config
@@ -78,19 +78,19 @@ export function SMTPPage({ onSendToChat }: PageProps) {
 
   const fetchConfig = useCallback(async () => {
     setConfigLoading(true);
-    try { const res = await crudList("smtp-config", { limit: 10 }); setConfigs((res.items || []) as SMTPConfig[]); } catch (e) { console.error(e); }
+    try { const res = await crudList("smtp-config", { limit: 10 }); setConfigs((res.items || []) as unknown as SMTPConfig[]); } catch (e) { console.error(e); }
     setConfigLoading(false);
   }, []);
 
   const fetchTemplates = useCallback(async () => {
     setTemplatesLoading(true);
-    try { const res = await crudList("email-templates", { limit: 100 }); setTemplates((res.items || []) as EmailTemplate[]); } catch (e) { console.error(e); }
+    try { const res = await crudList("email-templates", { limit: 100 }); setTemplates((res.items || []) as unknown as EmailTemplate[]); } catch (e) { console.error(e); }
     setTemplatesLoading(false);
   }, []);
 
   const fetchFila = useCallback(async () => {
     setFilaLoading(true);
-    try { const res = await crudList("email-queue", { limit: 500 }); setFila((res.items || []) as EmailQueueItem[]); } catch (e) { console.error(e); }
+    try { const res = await crudList("email-queue", { limit: 500 }); setFila((res.items || []) as unknown as EmailQueueItem[]); } catch (e) { console.error(e); }
     setFilaLoading(false);
   }, []);
 

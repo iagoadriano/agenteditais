@@ -75,7 +75,12 @@ export function clearSchemaCache() {
 
 export async function crudList(
   table: string,
-  params?: { q?: string; parent_id?: string; limit?: number; offset?: number }
+  params?: {
+    q?: string;
+    parent_id?: string;
+    limit?: number;
+    offset?: number;
+  }
 ): Promise<CrudListResponse> {
   const headers = await getAuthHeaders();
   const urlParams = new URLSearchParams();

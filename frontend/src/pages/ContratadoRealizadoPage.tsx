@@ -500,8 +500,8 @@ export function ContratadoRealizadoPage(props?: PageProps) {
           {title} ({items.length})
         </div>
         <DataTable
-          data={items as unknown as Record<string, unknown>[]}
-          columns={atrasosColumns as Column<Record<string, unknown>>[]}
+          data={items}
+          columns={atrasosColumns}
           idKey="contrato_id"
           emptyMessage="Nenhum"
         />
@@ -718,8 +718,8 @@ export function ContratadoRealizadoPage(props?: PageProps) {
 
               {/* ── Comparison table ── */}
               <DataTable
-                data={contratos as unknown as Record<string, unknown>[]}
-                columns={contratosColumns as Column<Record<string, unknown>>[]}
+                data={contratos}
+                columns={contratosColumns}
                 idKey="contrato_id"
                 emptyMessage="Nenhum contrato encontrado no periodo"
               />
@@ -1081,8 +1081,8 @@ export function ContratadoRealizadoPage(props?: PageProps) {
 
               {/* ── Vencimentos table ── */}
               <DataTable
-                data={vencimentos as unknown as Record<string, unknown>[]}
-                columns={vencimentosColumns as Column<Record<string, unknown>>[]}
+                data={vencimentos}
+                columns={vencimentosColumns}
                 idKey="entity_id"
                 emptyMessage="Nenhum vencimento proximo"
               />

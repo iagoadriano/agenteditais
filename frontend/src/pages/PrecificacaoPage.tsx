@@ -29,6 +29,9 @@ interface Lote {
   volume_exigido: number | null;
   valor_estimado: number | null;
   status: string;
+  tipo_amostra?: string | null;
+  equipamento_exigido?: string | null;
+  observacoes_tecnicas?: string | null;
 }
 
 interface EditalItem {
@@ -39,6 +42,9 @@ interface EditalItem {
   quantidade: number | null;
   valor_unitario_estimado: number | null;
   valor_total_estimado: number | null;
+  tipo_beneficio?: string | null;
+  /** Flag derivada no frontend (tipo_beneficio === "ignorado") */
+  _ignorado?: boolean;
 }
 
 interface Vinculo {
@@ -73,6 +79,7 @@ interface PrecoCamada {
   preco_base: number | null;
   valor_referencia_edital: number | null;
   valor_referencia_disponivel: boolean;
+  percentual_sobre_base?: number | null;
   target_referencia: number | null;
   margem_sobre_custo: number | null;
   lance_inicial: number | null;
@@ -142,7 +149,6 @@ export function PrecificacaoPage(props?: PageProps) {
   const [loteExpandido, setLoteExpandido] = useState<string | null>(null);
   const [loteEspecialidade, setLoteEspecialidade] = useState("");
   const [loteVolume, setLoteVolume] = useState("");
-  const [loteDescricao, setLoteDescricao] = useState("");
   const [loteTipoAmostra, setLoteTipoAmostra] = useState("");
   const [loteEquipamento, setLoteEquipamento] = useState("");
   const [loteObservacoes, setLoteObservacoes] = useState("");
@@ -182,6 +188,10 @@ export function PrecificacaoPage(props?: PageProps) {
     recomendacao: { custo_sugerido: number | null; markup_sugerido: number | null; preco_base_sugerido: number | null; referencia_sugerida: number | null; faixa: { agressivo: number | null; ideal: number | null; conservador: number | null }; justificativa: string; fonte: string | null };
     concorrentes: Array<{ nome: string; taxa_vitoria: number; preco_medio: number; editais_ganhos: number }>;
     referencia_edital: number | null;
+    tem_dados?: boolean;
+    termos_tentados?: string[];
+    etapa?: string;
+    atas_encontradas?: number;
   } | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
 
@@ -239,10 +249,6 @@ export function PrecificacaoPage(props?: PageProps) {
     { value: "", label: "Selecione um edital..." },
     ...editais.map((e) => ({ value: e.id ?? e.numero, label: `${e.numero} — ${e.orgao}` })),
   ];
-  const produtoOptions = [
-    { value: "", label: "Selecione..." },
-    ...produtos.map((p) => ({ value: p.id, label: p.nome })),
-  ];
 
   // ── Load lotes when edital changes ──
   const loadLotes = useCallback(async (eid: string) => {
@@ -277,7 +283,7 @@ export function PrecificacaoPage(props?: PageProps) {
       const camadasMap: Record<string, PrecoCamada> = {};
       for (const v of vinculosFiltrados) {
         try {
-          const pcRes = await crudList("preco-camadas", { edital_item_produto_id: v.id, limit: 1 });
+          const pcRes = await crudList("preco-camadas", { parent_id: v.id, limit: 1 });
           if (pcRes.items?.length > 0) camadasMap[v.id] = pcRes.items[0] as unknown as PrecoCamada;
         } catch { /* ignore */ }
       }
@@ -309,7 +315,7 @@ export function PrecificacaoPage(props?: PageProps) {
     if (!vinculoId) { setCamada(null); return; }
     (async () => {
       try {
-        const res = await crudList("preco-camadas", { edital_item_produto_id: vinculoId, limit: 1 });
+        const res = await crudList("preco-camadas", { parent_id: vinculoId, limit: 1 });
         const items = res.items as unknown as PrecoCamada[];
         if (items.length > 0) {
           const c = items[0];
@@ -340,7 +346,7 @@ export function PrecificacaoPage(props?: PageProps) {
     const prod = produtos.find(p => p.id === v.produto_id);
     const desc = ((item?.descricao || "") + " " + (prod?.nome || "")).toLowerCase()
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const cat = ((prod as Record<string, unknown>)?.categoria as string || "").toLowerCase();
+    const cat = (prod?.categoria || "").toLowerCase();
 
     // Termos que indicam conversão (produto vendido em embalagem com rendimento)
     const termosVolumetria = ["kit", "reagente", "caixa com", "frasco", "testes", "determinacoes", "dosagens", "ensaios", "reacoes"];
@@ -518,11 +524,11 @@ export function PrecificacaoPage(props?: PageProps) {
   const handleConfirmarSelecao = async (produtoId: string) => {
     try {
       // Buscar vínculo existente (no state OU no banco)
-      let existente = vinculos.find(v => (v as Record<string,unknown>).edital_item_id === selecaoItemId);
+      let existente = vinculos.find(v => v.edital_item_id === selecaoItemId);
       if (!existente) {
         // Tentar buscar no banco (pode existir mas não estar no state filtrado)
         try {
-          const dbRes = await crudList("edital-item-produto", { edital_item_id: selecaoItemId, limit: 1 });
+          const dbRes = await crudList("edital-item-produto", { parent_id: selecaoItemId, limit: 1 });
           const dbItems = (dbRes.items || []) as unknown as Vinculo[];
           if (dbItems.length > 0) existente = dbItems[0];
         } catch { /* ignore */ }
@@ -610,9 +616,9 @@ export function PrecificacaoPage(props?: PageProps) {
 
   // Helper: recarregar camada do banco e atualizar todasCamadas
   const _recarregarCamada = async () => {
-    const res = await crudList("preco-camadas", { edital_item_produto_id: vinculoId, limit: 1 });
+    const res = await crudList("preco-camadas", { parent_id: vinculoId, limit: 1 });
     if (res.items?.length > 0) {
-      const c = res.items[0] as PrecoCamada;
+      const c = res.items[0] as unknown as PrecoCamada;
       setCamada(c);
       setTodasCamadas(prev => ({ ...prev, [vinculoId]: c }));
       return c;
@@ -749,46 +755,6 @@ export function PrecificacaoPage(props?: PageProps) {
       }
     } catch (e) { alert(e instanceof Error ? e.message : "Erro ao simular estratégia"); }
     finally { setLoading(false); }
-  };
-
-  // Gerar explicação IA dos cenários
-  const gerarExplicacaoCenarios = async (cens: Record<string, unknown>[]) => {
-    if (cens.length === 0) return;
-    setCenarioExplicacaoLoading(true);
-    setCenarioExplicacaoIA(null);
-    try {
-      const prod = vinculoId ? produtos.find(p => p.id === vinculos.find(v => v.id === vinculoId)?.produto_id) : null;
-      const custoBase = camada?.custo_base_final ? Number(camada.custo_base_final) : 0;
-      const cenDescricao = cens.map(c => `- ${c.label}: R$ ${Number(c.valor || 0).toFixed(2)} (margem: ${Number(c.margem || 0).toFixed(1)}%)`).join("\n");
-      const prompt = `Analise os seguintes cenários de disputa de lances para o produto "${prod?.nome || 'Produto'}" e explique cada um em detalhes.
-
-CUSTO BASE: R$ ${custoBase.toFixed(2)}
-ESTRATÉGIA: ${perfil === "quero_ganhar" ? "Quero Ganhar (agressiva)" : "Não Ganhei no Mínimo (reposicionamento)"}
-
-CENÁRIOS:
-${cenDescricao}
-
-${insights?.recomendacao?.justificativa ? `CONTEXTO DE MERCADO:\n${insights.recomendacao.justificativa.slice(0, 500)}` : ""}
-
-Explique para cada cenário:
-1. O que significa esse valor de lance
-2. Qual a margem de lucro e se é viável
-3. Riscos e vantagens
-4. Em que situação usar esse cenário
-
-No final, dê uma RECOMENDAÇÃO clara de qual cenário é o mais adequado e por quê.
-Responda em português, formato markdown com títulos ##.`;
-
-      const session = await createSession("simulacao-lances") as Record<string, unknown>;
-      const sid = String(session.session_id || session.id);
-      const resp = await sendMessage(sid, prompt);
-      setCenarioExplicacaoIA(resp.response || "Análise não disponível.");
-    } catch (err) {
-      console.error("[CENARIOS IA] Erro:", err);
-      setCenarioExplicacaoIA("Erro ao gerar explicação IA.");
-    } finally {
-      setCenarioExplicacaoLoading(false);
-    }
   };
 
   // Abrir explicação em nova aba (MD/PDF)
@@ -1177,7 +1143,7 @@ ${html}
     setIaProcessing("Buscando produto na web...");
     setIaResponse(null);
     try {
-      const session = await createSession("precif-busca-web") as Record<string, unknown>;
+      const session = await createSession("precif-busca-web");
       const sid = String(session.session_id || session.id);
       const resp = await sendMessage(sid, msg);
       setIaResponse(resp.response || "Busca web concluída.");
@@ -1201,7 +1167,7 @@ ${html}
     setIaProcessing("Buscando registros ANVISA...");
     setIaResponse(null);
     try {
-      const session = await createSession("precif-anvisa") as Record<string, unknown>;
+      const session = await createSession("precif-anvisa");
       const sid = String(session.session_id || session.id);
       const resp = await sendMessage(sid, msg);
       setIaResponse(resp.response || "Busca ANVISA concluída.");
@@ -1218,7 +1184,7 @@ ${html}
 
   // ── Tabs ──
   const tabs = [
-    { id: "lotes", label: `Lotes ${lotes.length > 0 ? (lotes.some(l => (l as Record<string,unknown>).status === "configurado") ? "✅" : "⚠️") : "❌"}`, icon: <Layers size={16} /> },
+    { id: "lotes", label: `Lotes ${lotes.length > 0 ? (lotes.some(l => l.status === "configurado") ? "✅" : "⚠️") : "❌"}`, icon: <Layers size={16} /> },
     { id: "camadas", label: `Custos e Preços ${Object.values(todasCamadas).some(c => c.preco_base) ? "✅" : Object.values(todasCamadas).some(c => c.custo_unitario) ? "⚠️" : vinculos.length > 0 ? "⚠️" : "❌"}`, icon: <DollarSign size={16} /> },
     { id: "lances", label: `Lances ${Object.values(todasCamadas).some(c => c.lance_inicial) ? "✅" : "❌"}`, icon: <Target size={16} /> },
     { id: "estrategia", label: "Estratégia", icon: <BarChart3 size={16} /> },
@@ -1284,9 +1250,9 @@ ${html}
                                   if (novoId) {
                                     setLoteEspecialidade(lote.especialidade || "");
                                     setLoteVolume(String(lote.volume_exigido || ""));
-                                    setLoteTipoAmostra(String((lote as Record<string,unknown>).tipo_amostra || ""));
-                                    setLoteEquipamento(String((lote as Record<string,unknown>).equipamento_exigido || ""));
-                                    setLoteObservacoes(String((lote as Record<string,unknown>).observacoes_tecnicas || ""));
+                                    setLoteTipoAmostra(String(lote.tipo_amostra || ""));
+                                    setLoteEquipamento(String(lote.equipamento_exigido || ""));
+                                    setLoteObservacoes(String(lote.observacoes_tecnicas || ""));
                                   }
                                 }}>
                                 <div>
@@ -1310,15 +1276,15 @@ ${html}
                                       <TextInput value={loteVolume || String(lote.volume_exigido || "")} onChange={setLoteVolume} placeholder="Ex: 50000" />
                                     </FormField>
                                     <FormField label="Tipo de Amostra">
-                                      <TextInput value={loteTipoAmostra || String((lote as Record<string,unknown>).tipo_amostra || "")} onChange={setLoteTipoAmostra} placeholder="Ex: Sangue total, Soro, Urina" />
+                                      <TextInput value={loteTipoAmostra || String(lote.tipo_amostra || "")} onChange={setLoteTipoAmostra} placeholder="Ex: Sangue total, Soro, Urina" />
                                     </FormField>
                                   </div>
                                   <div className="form-grid form-grid-2" style={{ marginTop: 8 }}>
                                     <FormField label="Equipamento Exigido">
-                                      <TextInput value={loteEquipamento || String((lote as Record<string,unknown>).equipamento_exigido || "")} onChange={setLoteEquipamento} placeholder="Ex: Analisador bioquímico, Microscópio" />
+                                      <TextInput value={loteEquipamento || String(lote.equipamento_exigido || "")} onChange={setLoteEquipamento} placeholder="Ex: Analisador bioquímico, Microscópio" />
                                     </FormField>
                                     <FormField label="Descrição / Observações Técnicas">
-                                      <TextInput value={loteObservacoes || String((lote as Record<string,unknown>).observacoes_tecnicas || "")} onChange={setLoteObservacoes} placeholder="Observações sobre o lote" />
+                                      <TextInput value={loteObservacoes || String(lote.observacoes_tecnicas || "")} onChange={setLoteObservacoes} placeholder="Observações sobre o lote" />
                                     </FormField>
                                   </div>
                                   <div style={{ marginTop: 8 }}>
@@ -1346,8 +1312,8 @@ ${html}
                                           : itensEdital; // fallback: todos (lote sem mapeamento)
                                         return itensDoLote;
                                       })().slice(0, 20).map((it) => {
-                                        const vinculo = vinculos.find(v => (v as Record<string,unknown>).edital_item_id === it.id);
-                                        const prodVinculado = vinculo ? produtos.find(p => p.id === (vinculo as Record<string,unknown>).produto_id) : null;
+                                        const vinculo = vinculos.find(v => v.edital_item_id === it.id);
+                                        const prodVinculado = vinculo ? produtos.find(p => p.id === vinculo.produto_id) : null;
                                         return (
                                         <tr key={it.id} style={{ borderBottom: "1px solid var(--border-light, #eee)" }}>
                                           <td style={{ padding: 4 }}>{it.numero_item}</td>
@@ -1379,7 +1345,7 @@ ${html}
                                               <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 8, fontSize: 12, fontWeight: 600, backgroundColor: "#22c55e20", color: "#22c55e", border: "1px solid #22c55e40" }}>
                                                 ✅ {prodVinculado.nome?.slice(0, 30)}
                                               </span>
-                                            ) : (it as Record<string, unknown>)._ignorado || (it as Record<string, unknown>).tipo_beneficio === "ignorado" ? (
+                                            ) : it._ignorado || it.tipo_beneficio === "ignorado" ? (
                                               <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 8, fontSize: 12, fontWeight: 600, backgroundColor: "#64748b20", color: "#94a3b8", border: "1px solid #64748b40" }}>
                                                 ⏭️ Ignorado
                                               </span>
@@ -1450,7 +1416,7 @@ ${html}
                                                     } catch { alert("Erro ao desvincular."); }
                                                   }}
                                                 />
-                                              ) : (it as Record<string, unknown>)._ignorado ? (
+                                              ) : it._ignorado ? (
                                                 <ActionButton
                                                   icon={<Check size={14} />}
                                                   label="Reativar"
@@ -1720,15 +1686,15 @@ ${html}
                                   }}
                                 />
                               </div>
-                              {insights && (insights as Record<string, unknown>).termos_tentados && (
+                              {insights && insights.termos_tentados && (
                                 <p style={{ fontSize: 11, marginTop: 8, color: "#64748b" }}>
-                                  Termos buscados: {((insights as Record<string, unknown>).termos_tentados as string[]).join(" | ")}
-                                  {(insights as Record<string, unknown>).etapa && <span> | Etapa: {String((insights as Record<string, unknown>).etapa)}</span>}
+                                  Termos buscados: {insights.termos_tentados.join(" | ")}
+                                  {insights.etapa && <span> | Etapa: {String(insights.etapa)}</span>}
                                 </p>
                               )}
                             </div>
                           )}
-                          {!insightsLoading && insights && (insights as Record<string, unknown>).tem_dados && (
+                          {!insightsLoading && insights && insights.tem_dados && (
                             <>
                               {/* Banner resumo */}
                               <div style={{ display: "flex", gap: 16, padding: "8px 12px", borderRadius: 8, backgroundColor: "#3b82f610", border: "1px solid #3b82f630", fontSize: 13, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
@@ -1887,7 +1853,7 @@ ${html}
                         {/* UC-P04: Base de Custos */}
                         <Card title="Base de Custos" icon={<DollarSign size={18} />}>
                           {/* Explicação IA */}
-                          {insights && (insights as Record<string, unknown>).tem_dados && insights.recomendacao.custo_sugerido && (
+                          {insights && insights.tem_dados && insights.recomendacao.custo_sugerido && (
                             <div style={{ padding: "8px 12px", borderRadius: 6, backgroundColor: "#3b82f608", border: "1px solid #3b82f620", fontSize: 12, color: "var(--text-secondary)", marginBottom: 12 }}>
                               <Sparkles size={12} style={{ display: "inline", marginRight: 4, color: "#3b82f6" }} />
                               <strong>IA:</strong> Custo sugerido de <strong>{fmt(insights.recomendacao.custo_sugerido)}</strong> — calculado como 85% da referência histórica.
@@ -1933,7 +1899,7 @@ ${html}
                         {/* UC-P05: Preço Base */}
                         <Card title="Preço Base" icon={<TrendingUp size={18} />}>
                           {/* Explicação IA */}
-                          {insights && (insights as Record<string, unknown>).tem_dados && insights.recomendacao.preco_base_sugerido && (
+                          {insights && insights.tem_dados && insights.recomendacao.preco_base_sugerido && (
                             <div style={{ padding: "8px 12px", borderRadius: 6, backgroundColor: "#3b82f608", border: "1px solid #3b82f620", fontSize: 12, color: "var(--text-secondary)", marginBottom: 12 }}>
                               <Sparkles size={12} style={{ display: "inline", marginRight: 4, color: "#3b82f6" }} />
                               <strong>IA:</strong> Preço base sugerido de <strong>{fmt(insights.recomendacao.preco_base_sugerido)}</strong> — 97% da média dos vencedores ({fmt(insights.historico.preco_medio)}).
@@ -1998,7 +1964,7 @@ ${html}
                         {/* UC-P06: Valor de Referência */}
                         <Card title="Valor de Referência" icon={<Target size={18} />}>
                           {/* Explicação IA */}
-                          {insights && (insights as Record<string, unknown>).tem_dados && (insights.referencia_edital || insights.recomendacao.referencia_sugerida) && (
+                          {insights && insights.tem_dados && (insights.referencia_edital || insights.recomendacao.referencia_sugerida) && (
                             <div style={{ padding: "8px 12px", borderRadius: 6, backgroundColor: "#3b82f608", border: "1px solid #3b82f620", fontSize: 12, color: "var(--text-secondary)", marginBottom: 12 }}>
                               <Sparkles size={12} style={{ display: "inline", marginRight: 4, color: "#3b82f6" }} />
                               <strong>IA:</strong> {insights.referencia_edital
@@ -2496,14 +2462,14 @@ Qual cenário é mais adequado e por quê.`;
                               <p style={{ fontSize: 14, fontWeight: 600, margin: 0 }}>
                                 Competitividade: {Number(scoreComp.score ?? 0) > 70 ? "Alta" : Number(scoreComp.score ?? 0) >= 40 ? "Média" : "Baixa"}
                               </p>
-                              {scoreComp.bootstrap_pncp && (
+                              {scoreComp.bootstrap_pncp ? (
                                 <span style={{
                                   display: "inline-block", marginTop: 4, fontSize: 11, padding: "2px 8px",
                                   borderRadius: 4, background: "#3b82f620", color: "#3b82f6", border: "1px solid #3b82f640",
                                 }}>
                                   estimativa PNCP
                                 </span>
-                              )}
+                              ) : null}
                             </div>
                           </div>
                           {Array.isArray(scoreComp.fatores) && (scoreComp.fatores as Array<Record<string, unknown>>).map((f, i) => (
@@ -2629,7 +2595,6 @@ Qual cenário é mais adequado e por quê.`;
                                     { key: "posicao", header: "Posição", width: "80px", render: (r) => String(r.posicao ?? "") },
                                     { key: "margem", header: "Margem", width: "80px", render: (r) => pct(Number(r.margem ?? 0)) },
                                   ] as Column<Record<string, unknown>>[]}
-                                  pageSize={10}
                                 />
                               )}
                             </div>
@@ -2660,7 +2625,7 @@ Qual cenário é mais adequado e por quê.`;
                       {dreResult && (
                         <div style={{ marginTop: 16 }}>
                           {/* Badge de atratividade */}
-                          {dreResult.atratividade && (() => {
+                          {dreResult.atratividade ? (() => {
                             const atrat = String(dreResult.atratividade);
                             const color = atrat === "verde" || atrat === "alta" ? "#22c55e"
                               : atrat === "amarelo" || atrat === "media" ? "#eab308" : "#ef4444";
@@ -2674,7 +2639,7 @@ Qual cenário é mais adequado e por quê.`;
                                 Atratividade: {label}
                               </span>
                             );
-                          })()}
+                          })() : null}
 
                           {/* Tabela DRE */}
                           {Array.isArray(dreResult.linhas) && (

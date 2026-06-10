@@ -37,7 +37,7 @@ function getDiffFields(antes: any, depois: any): { field: string; before: string
   return diffs;
 }
 
-export function AuditoriaPage({ onSendToChat }: PageProps) {
+export function AuditoriaPage(_props: PageProps) {
   const [activeTab, setActiveTab] = useState<"consultar" | "sensiveis" | "exportar">("consultar");
   const [logs, setLogs] = useState<AuditoriaLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,7 +66,7 @@ export function AuditoriaPage({ onSendToChat }: PageProps) {
       if (filtroEntidade) params.search = filtroEntidade;
       if (activeTab === "sensiveis") params.search = "sensitive";
       const res = await crudList("auditoria-log", params);
-      let items = (res.items || []) as AuditoriaLog[];
+      let items = (res.items || []) as unknown as AuditoriaLog[];
       if (filtroPeriodo) {
         const diasMs = parseInt(filtroPeriodo) * 86400000;
         items = items.filter(l => l.created_at && new Date(l.created_at).getTime() >= Date.now() - diasMs);
@@ -160,7 +160,7 @@ export function AuditoriaPage({ onSendToChat }: PageProps) {
     setExportHash("");
     try {
       const res = await crudList("auditoria-log", { limit: 5000 });
-      let items = (res.items || []) as AuditoriaLog[];
+      let items = (res.items || []) as unknown as AuditoriaLog[];
       const inicio = new Date(exportInicio).getTime();
       const fim = new Date(exportFim + "T23:59:59").getTime();
       items = items.filter(l => l.created_at && new Date(l.created_at).getTime() >= inicio && new Date(l.created_at).getTime() <= fim);

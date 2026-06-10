@@ -6,7 +6,7 @@ import {
   Filter, Zap, ArrowDown, CheckCircle, DollarSign, AlertTriangle,
   Edit2, Save, X, Layers, Check, SquareCheck as SquareCheckIcon
 } from "lucide-react";
-import { Card, DataTable, ActionButton, FilterBar, Modal, FormField, TextInput, SelectInput, ScoreBar, StatusBadge, UploadLoteIA } from "../components/common";
+import { Card, DataTable, ActionButton, FilterBar, Modal, FormField, TextInput, SelectInput, StatusBadge, UploadLoteIA } from "../components/common";
 import type { Column } from "../components/common";
 import { getProdutos, getProduto, getProdutoCompletude, getProdutosCompletudeBatch, buscarWebEstruturado, reprocessarMetadados, sendMessage, sendMessageWithFile, createSession } from "../api/client";
 import type { Produto, ProdutoEspecificacao, CompletudeResult, BuscaWebResposta } from "../api/client";
@@ -72,7 +72,7 @@ export function PortfolioPage({ onSendToChat }: PortfolioPageProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoriaFilter, setCategoriaFilter] = useState("todas");
+  const [categoriaFilter] = useState("todas");
   const [filtroArea, setFiltroArea] = useState("");
   const [filtroClasse, setFiltroClasse] = useState("");
   const [filtroSubclasse, setFiltroSubclasse] = useState("");

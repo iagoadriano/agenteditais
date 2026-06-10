@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { PageProps } from "../types";
-import { Settings, Globe, Bell, Palette, Play, Pause, MapPin, CheckCircle, AlertTriangle, XCircle, Loader2, Lock, Info, DollarSign, Layers, Plus, Trash2, Edit2, ChevronRight, ChevronDown, Cpu, FolderTree, Package, RefreshCw, X } from "lucide-react";
-import { Card, ActionButton, TabPanel, FormField, TextInput, Checkbox, SelectInput, StatusBadge } from "../components/common";
+import { Settings, Globe, Bell, Palette, Play, Pause, MapPin, AlertTriangle, Loader2, Lock, DollarSign, Layers, Plus, Trash2, Edit2, ChevronRight, ChevronDown, Cpu, FolderTree, Package, RefreshCw, X } from "lucide-react";
+import { Card, ActionButton, TabPanel, FormField, TextInput, Checkbox, SelectInput } from "../components/common";
 import { crudList, crudCreate, crudUpdate, crudDelete } from "../api/crud";
 
 interface Fonte {
@@ -142,10 +142,10 @@ const ESTADOS_BR = [
 export function ParametrizacoesPage(_props: PageProps) {
   const [fontes, setFontes] = useState<Fonte[]>([]);
   const [loadingFontes, setLoadingFontes] = useState(true);
-  const [errorFontes, setErrorFontes] = useState<string | null>(null);
-  const [parametros, setParametros] = useState<ParametroScore[]>([]);
-  const [loadingParametros, setLoadingParametros] = useState(true);
-  const [classes, setClasses] = useState<Classe[]>([]);
+  const [, setErrorFontes] = useState<string | null>(null);
+  const [, setParametros] = useState<ParametroScore[]>([]);
+  const [, setLoadingParametros] = useState(true);
+  const [, setClasses] = useState<Classe[]>([]);
 
   // === Classes Tab State ===
   const [areasTree, setAreasTree] = useState<AreaProduto[]>([]);
@@ -254,9 +254,6 @@ export function ParametrizacoesPage(_props: PageProps) {
   const [salvoFeedback, setSalvoFeedback] = useState<string | null>(null);
   const [erroSave, setErroSave] = useState<string | null>(null);
 
-
-  // R5: Norteadores - tooltip state
-  const [showPortfolioHint, setShowPortfolioHint] = useState(false);
 
   // Ref for tab container to programmatically switch tabs
   const tabContainerRef = useRef<HTMLDivElement>(null);
@@ -650,17 +647,6 @@ export function ParametrizacoesPage(_props: PageProps) {
   };
 
 
-  const getParamPeso = (nome: string) =>
-    parametros.find(p => p.nome === nome)?.peso?.toString() || "";
-
-  const updateParamPeso = async (nome: string, valor: string) => {
-    const p = parametros.find(p => p.nome === nome);
-    if (p) {
-      await crudUpdate("parametros-score", p.id, { peso: Number(valor) });
-      setParametros(parametros.map(pm => pm.id === p.id ? { ...pm, peso: Number(valor) } : pm));
-    }
-  };
-
   // Helper to ensure parametros-score record exists, returns the id
   const ensureParamScore = async (): Promise<string> => {
     if (paramScoreId) return paramScoreId;
@@ -870,19 +856,6 @@ export function ParametrizacoesPage(_props: PageProps) {
       setTimeout(() => setPrefSalvas(false), 3000);
     } catch (e) {
       console.error("Erro ao salvar preferencias:", e);
-    }
-  };
-
-  // Helper to scroll to a card by title text
-  const scrollToCard = (titleText: string) => {
-    const container = tabContainerRef.current;
-    if (!container) return;
-    const headings = container.querySelectorAll<HTMLElement>(".card-title, h3");
-    for (const h of headings) {
-      if (h.textContent?.includes(titleText)) {
-        h.closest(".card")?.scrollIntoView({ behavior: "smooth", block: "start" });
-        return;
-      }
     }
   };
 

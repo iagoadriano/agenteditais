@@ -1,15 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import type { PageProps } from "../types";
 import {
-  AlertTriangle, FileText, Lightbulb, Save, Clock, CheckCircle,
+  AlertTriangle, FileText, Lightbulb, Save, Clock,
   Scale, Search, Upload, Download, Send, Eye, Loader2, Plus,
-  AlertCircle, Shield, XCircle, Trash2, Edit3,
+  Shield, XCircle, Trash2, Edit3,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
-  Card, DataTable, ActionButton, FormField, TextInput, TextArea,
-  SelectInput, Modal, TabPanel, ActionBar,
+  Card, DataTable, ActionButton, FormField, TextArea,
+  SelectInput, Modal, TabPanel,
 } from "../components/common";
 import type { Column } from "../components/common";
 import { getEditais, createSession, sendMessage } from "../api/client";
@@ -251,7 +251,7 @@ export function ImpugnacaoPage(props?: PageProps) {
     if (!editalId) return;
     setPeticaoLoading(true);
     try {
-      const session = await createSession("gerar-peticao") as Record<string, unknown>;
+      const session = await createSession("gerar-peticao");
       const sid = String(session.session_id || session.id);
       const edital = editais.find(e => e.id === editalId);
       const incons = inconsistencias.map(i => `- ${i.trecho} (${i.lei_violada})`).join("\n");
@@ -264,38 +264,6 @@ export function ImpugnacaoPage(props?: PageProps) {
       setPeticaoLoading(false);
     }
   }, [editalId, editais, inconsistencias]);
-
-  // Parse IA response into structured inconsistencies
-  function parseInconsistencias(text: string): Inconsistencia[] {
-    const results: Inconsistencia[] = [];
-    const lines = text.split("\n");
-    let counter = 0;
-    for (const line of lines) {
-      const cells = line.split("|").map(c => c.trim()).filter(Boolean);
-      if (cells.length >= 4) {
-        // Skip header row
-        const first = cells[0].replace(/^#+\s*/, "").trim();
-        if (first === "#" || first === "---" || first.startsWith("-")) continue;
-        const num = parseInt(first);
-        if (isNaN(num) && counter === 0) continue;
-        counter++;
-        const gravidade = cells.length >= 4
-          ? (cells[3].toUpperCase().includes("ALTA") ? "ALTA" : cells[3].toUpperCase().includes("MEDIA") || cells[3].toUpperCase().includes("MÉDIA") ? "MEDIA" : "BAIXA")
-          : "BAIXA";
-        const sugestao = cells.length >= 5
-          ? (cells[4].toUpperCase().includes("IMPUGNAC") ? "Impugnacao" as const : "Esclarecimento" as const)
-          : "Esclarecimento" as const;
-        results.push({
-          id: counter,
-          trecho: cells[1] || "",
-          lei_violada: cells[2] || "",
-          gravidade,
-          sugestao,
-        });
-      }
-    }
-    return results;
-  }
 
   // ── Peticoes handlers ──
 
@@ -329,7 +297,6 @@ export function ImpugnacaoPage(props?: PageProps) {
     if (!peticaoEditalId) return;
     setPeticoesSaving(true);
     try {
-      const edital = editais.find(e => e.id === peticaoEditalId);
       let conteudo = peticaoConteudo;
       if (peticaoTemplateId && !conteudo) {
         const tmpl = templates.find(t => t.id === peticaoTemplateId);

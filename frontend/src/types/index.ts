@@ -26,6 +26,8 @@ export interface Message {
 
 export interface Session {
   session_id: string;
+  /** Alias opcional retornado por alguns endpoints no lugar de session_id */
+  id?: string;
   name: string;
   created_at: string;
   updated_at: string;

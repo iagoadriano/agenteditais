@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import type { PageProps } from "../types";
 import {
-  ClipboardCheck, Eye, Download, MessageSquare, FileText, CheckCircle, XCircle, Clock,
+  ClipboardCheck, Eye, MessageSquare, FileText, CheckCircle, XCircle, Clock,
   AlertTriangle, Shield, TrendingUp, Target, ThumbsUp, X, Sparkles, Building,
   AlertCircle, Scale, FolderOpen, Search, RefreshCw, Layers
 } from "lucide-react";
 import {
   Card, DataTable, ActionButton, FilterBar, Modal, FormField, TextInput, TextArea,
-  SelectInput, ScoreBadge, ScoreBar, ScoreCircle, StatusBadge, TabPanel, RadioGroup
+  SelectInput, ScoreBar, ScoreCircle, StatusBadge, TabPanel
 } from "../components/common";
 import type { Column } from "../components/common";
 import { crudList, crudCreate, crudUpdate } from "../api/crud";
@@ -169,7 +169,7 @@ interface HistoricoRealItem {
 let _pageSessionId: string | null = null;
 async function getOrCreateSession(): Promise<string> {
   if (_pageSessionId) return _pageSessionId;
-  const session = await createSession("validacao-ia") as Record<string, unknown>;
+  const session = await createSession("validacao-ia");
   _pageSessionId = String(session.session_id || session.id || "");
   if (!_pageSessionId) throw new Error("Falha ao criar sessão");
   return _pageSessionId;
@@ -321,9 +321,9 @@ export function ValidacaoPage(props?: PageProps) {
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
 
   // V3/V4: Histórico semelhante real e reputação do órgão
-  const [historicoReal, setHistoricoReal] = useState<HistoricoRealItem[]>([]);
-  const [historicoRealLoading, setHistoricoRealLoading] = useState(false);
-  const [reputacaoCalculada, setReputacaoCalculada] = useState<{ total: number; goCount: number; nogoCount: number } | null>(null);
+  const [, setHistoricoReal] = useState<HistoricoRealItem[]>([]);
+  const [, setHistoricoRealLoading] = useState(false);
+  const [, setReputacaoCalculada] = useState<{ total: number; goCount: number; nogoCount: number } | null>(null);
 
   // UF da empresa (carregada dinamicamente)
   const [empresaUf, setEmpresaUf] = useState("--");
@@ -394,7 +394,7 @@ export function ValidacaoPage(props?: PageProps) {
     }
     setItensLoading(true);
     crudList("editais-itens", { parent_id: selectedEdital.id, limit: 200 })
-      .then(res => setItensEdital((res.items || []) as EditalItemData[]))
+      .then(res => setItensEdital((res.items || []) as unknown as EditalItemData[]))
       .catch(() => setItensEdital([]))
       .finally(() => setItensLoading(false));
 
@@ -854,13 +854,6 @@ Destaque: prazo de entrega, garantia, requisitos técnicos principais e pontos d
       case "medio": return <StatusBadge status="warning" label="Medio" />;
       case "baixo": return <StatusBadge status="error" label="Baixo" />;
     }
-  };
-
-  // Helper: badge de risco por dimensão de score
-  const getScoreDimensionBadge = (score: number) => {
-    if (score > 70) return <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: "10px", fontSize: "11px", fontWeight: 600, backgroundColor: "#22c55e20", color: "#22c55e", border: "1px solid #22c55e40" }}>Atendido</span>;
-    if (score >= 30) return <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: "10px", fontSize: "11px", fontWeight: 600, backgroundColor: "#eab30820", color: "#eab308", border: "1px solid #eab30840" }}>Ponto de Atencao</span>;
-    return <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: "10px", fontSize: "11px", fontWeight: 600, backgroundColor: "#ef444420", color: "#ef4444", border: "1px solid #ef444440" }}>Impeditivo</span>;
   };
 
   const columns: Column<Edital>[] = [
@@ -1893,7 +1886,7 @@ Destaque: prazo de entrega, garantia, requisitos técnicos principais e pontos d
                   <tr key={i} style={{ borderBottom: "1px solid #1e293b" }}>
                     <td style={{ padding: "6px 8px" }}>
                       <span>{String(c.nome || "").slice(0, 35)}</span>
-                      {c.cnpj && <span style={{ fontSize: "10px", color: "#64748b", marginLeft: "4px" }}>({String(c.cnpj).slice(0, 8)}...)</span>}
+                      {!!c.cnpj && <span style={{ fontSize: "10px", color: "#64748b", marginLeft: "4px" }}>({String(c.cnpj).slice(0, 8)}...)</span>}
                     </td>
                     <td style={{ padding: "6px 8px", textAlign: "center" }}>{Number(c.editais_participados || 0)}</td>
                     <td style={{ padding: "6px 8px", textAlign: "center", color: "#22c55e", fontWeight: 600 }}>{Number(c.editais_ganhos || 0)}</td>
@@ -1973,7 +1966,7 @@ Destaque: prazo de entrega, garantia, requisitos técnicos principais e pontos d
           {!mercadoData && !mercadoLoading && (
             <span style={{ fontSize: "12px", color: "#64748b" }}>Busca compras do órgão no PNCP, calcula estatísticas e gera análise via IA.</span>
           )}
-          {mercadoData?.cache && (
+          {!!mercadoData?.cache && (
             <span style={{ fontSize: "11px", color: "#64748b", padding: "2px 8px", borderRadius: "8px", backgroundColor: "#1e293b" }}>Cache (dados recentes)</span>
           )}
         </div>

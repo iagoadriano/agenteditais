@@ -9,7 +9,7 @@ import {
 } from "../components/common";
 import type { Column } from "../components/common";
 import { crudList, crudCreate, crudUpdate, crudDelete } from "../api/crud";
-import { getScoreCompetitividade } from "../api/sprint9";
+import InteligenciaComercialPanel from "../components/InteligenciaComercialPanel";
 
 // --- Interfaces ---
 
@@ -80,6 +80,7 @@ interface EditalBusca {
 interface MonitoramentoInfo {
   id: string;
   termo: string;
+  nome?: string;
   ncm?: string;
   fontes?: string[];
   ufs?: string[];
@@ -414,7 +415,7 @@ export function CaptacaoPage(props?: PageProps) {
 
   // CV01-3 (Arnaldo Sprint 2 V8): limpar todos os filtros
   const handleLimparFiltros = () => {
-    setTermoBusca("");
+    setTermo("");
     setNcm("");
     setUf("todas");
     setFonte("todas");
@@ -428,7 +429,7 @@ export function CaptacaoPage(props?: PageProps) {
     setErrosFontes(null);
   };
   const [painelEdital, setPainelEdital] = useState<EditalBusca | null>(null);
-  const [intencaoLocal, setIntencaoLocal] = useState("estrategico");
+  const [intencaoLocal, setIntencaoLocal] = useState<EditalBusca["intencaoEstrategica"]>("estrategico");
   const [margemLocal, setMargemLocal] = useState(15);
   const [salvandoEstrategia, setSalvandoEstrategia] = useState(false);
   const [estrategiaSalva, setEstrategiaSalva] = useState(false);
@@ -1191,7 +1192,7 @@ export function CaptacaoPage(props?: PageProps) {
       if (!editalId) {
         // Verificar se já existe um edital temp_score com mesmo número+órgão
         try {
-          const existentes = await crudList("editais", { q: edital.numero, per_page: 5 });
+          const existentes = await crudList("editais", { q: edital.numero, limit: 5 });
           const tempExistente = (existentes.items || []).find(
             (e: Record<string, unknown>) => e.numero === edital.numero && e.orgao === edital.orgao
           );
@@ -2504,6 +2505,11 @@ function baixarMD() {
                     </div>
                   </div>
 
+                  {/* Fase 2 — Inteligência Comercial (RF-CLA, RF-SCO, RF-PRE) */}
+                  <InteligenciaComercialPanel
+                    editalId={painelEdital.editalSalvoId || (painelEdital.id.length === 36 ? painelEdital.id : null)}
+                  />
+
                   {/* Score principal — só mostra se busca usou score */}
                   {tipoScore !== "nenhum" && (
                   <div className="panel-score-section">
@@ -2663,7 +2669,7 @@ function baixarMD() {
                     <h4>Intencao Estrategica</h4>
                     <RadioGroup
                       value={intencaoLocal}
-                      onChange={setIntencaoLocal}
+                      onChange={(v) => setIntencaoLocal(v as EditalBusca["intencaoEstrategica"])}
                       name="intencao-panel"
                       options={[
                         { value: "estrategico", label: "Estrategico" },
@@ -2768,12 +2774,12 @@ function baixarMD() {
                           })}
                         </div>
                         {/* Decisao GO/NO-GO */}
-                        {scoresValidacao.decisao && (
+                        {Boolean(scoresValidacao.decisao) && (
                           <div style={{ marginBottom: "8px", padding: "6px 10px", borderRadius: "6px", backgroundColor: String(scoresValidacao.decisao) === "GO" ? "#052e16" : String(scoresValidacao.decisao) === "NO-GO" ? "#450a0a" : "#1e293b" }}>
                             <strong style={{ color: String(scoresValidacao.decisao) === "GO" ? "#22c55e" : String(scoresValidacao.decisao) === "NO-GO" ? "#ef4444" : "#eab308" }}>
                               {String(scoresValidacao.decisao)}
                             </strong>
-                            {scoresValidacao.justificativa && (
+                            {Boolean(scoresValidacao.justificativa) && (
                               <div style={{ fontSize: "12px", color: "#94a3b8", marginTop: "4px" }}>
                                 {String(scoresValidacao.justificativa)}
                               </div>
@@ -3222,7 +3228,7 @@ function baixarMD() {
             icon={<Calendar size={20} />}
             value={dispensaStats.encerradas}
             label="Encerradas"
-            color="gray"
+            color="blue"
           />
         </div>
 

@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 interface ActionBarProps {
   children: ReactNode;
@@ -17,9 +17,11 @@ interface ActionButtonProps {
   icon?: ReactNode;
   label: string;
   onClick: () => void;
-  variant?: "primary" | "secondary" | "danger" | "success";
+  // "neutral", "outline" e "warning" já eram usados em runtime pelas pages
+  variant?: "primary" | "secondary" | "danger" | "success" | "neutral" | "outline" | "warning";
   disabled?: boolean;
   loading?: boolean;
+  size?: "sm" | "md";
 }
 
 export function ActionButton({
@@ -29,10 +31,12 @@ export function ActionButton({
   variant = "secondary",
   disabled = false,
   loading = false,
+  size = "md",
 }: ActionButtonProps) {
   return (
     <button
       className={`action-button action-button-${variant}`}
+      style={size === "sm" ? { padding: "4px 10px", fontSize: 12 } : undefined}
       onClick={onClick}
       disabled={disabled || loading}
     >

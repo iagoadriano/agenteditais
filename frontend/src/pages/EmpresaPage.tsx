@@ -3,32 +3,10 @@ import { Building, Upload, Plus, Trash2, Eye, Download, AlertTriangle, X, Refres
 import { Card, DataTable, ActionButton, FormField, TextInput, SelectInput, Modal, StatusBadge, UploadLoteIA } from "../components/common";
 import type { Column } from "../components/common";
 import { crudList, crudGet, crudCreate, crudUpdate, crudDelete, getCrudTokenGetter } from "../api/crud";
-import type { CrudListResponse } from "../api/crud";
 import { useAuth } from "../contexts/AuthContext";
 
 interface EmpresaPageProps {
   onSendToChat?: (message: string, file?: File) => Promise<void>;
-}
-
-interface Empresa {
-  id: string;
-  razao_social: string;
-  nome_fantasia?: string;
-  cnpj?: string;
-  inscricao_estadual?: string;
-  website?: string;
-  instagram?: string;
-  linkedin?: string;
-  facebook?: string;
-  endereco?: string;
-  endereco_numero?: string;
-  endereco_complemento?: string;
-  bairro?: string;
-  cidade?: string;
-  uf?: string;
-  cep?: string;
-  emails?: string;
-  celulares?: string;
 }
 
 interface Documento {
@@ -283,7 +261,7 @@ export function EmpresaPage({ onSendToChat }: EmpresaPageProps) {
         crudList("empresa-certidoes", { parent_id: id }),
         crudList("empresa-responsaveis", { parent_id: id }),
         // F04-03: precisamos do estado 'ativo' das fontes pra mostrar na tabela
-        crudList("fontes-certidoes", { include_globais: true, limit: 200 }),
+        crudList("fontes-certidoes", { limit: 200 }),
       ]);
 
       // F04-03: mapa fonte_id -> ativo
