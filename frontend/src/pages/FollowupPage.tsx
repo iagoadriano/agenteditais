@@ -1,8 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import type { PageProps } from "../types";
-import { Trophy, XCircle, Ban, Clock, Loader2, Bell } from "lucide-react";
+import { Trophy, XCircle, Ban, Clock, Loader2, Bell, CalendarDays, Download } from "lucide-react";
 import { Card, DataTable, ActionButton, FormField, TextInput, TextArea, SelectInput, Modal, TabPanel } from "../components/common";
 import type { Column } from "../components/common";
+import {
+  getAgendaPregoes, agendarAlertasAutomatico, baixarCalendarioICS,
+  type EventoAgenda,
+} from "../api/alertas";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -76,7 +80,34 @@ export function FollowupPage(_props?: PageProps) {
     } catch (e) { console.error(e); }
   }, []);
 
-  useEffect(() => { fetchData(); fetchAlertas(); }, [fetchData, fetchAlertas]);
+  // Agenda de pregões (RF-ALE-001): contagem regressiva + alertas automáticos
+  const [agenda, setAgenda] = useState<EventoAgenda[]>([]);
+  const [agendaLoading, setAgendaLoading] = useState(false);
+  const [agendaMsg, setAgendaMsg] = useState<string | null>(null);
+
+  const fetchAgenda = useCallback(async () => {
+    setAgendaLoading(true);
+    try {
+      const data = await getAgendaPregoes(30);
+      setAgenda(data.eventos);
+    } catch (e) { console.error(e); }
+    setAgendaLoading(false);
+  }, []);
+
+  const handleAgendarAutomatico = async () => {
+    setAgendaMsg(null);
+    try {
+      const r = await agendarAlertasAutomatico(30);
+      setAgendaMsg(r.alertas_criados > 0
+        ? `${r.alertas_criados} alerta(s) criado(s) para ${r.eventos_cobertos_agora} prazo(s)`
+        : "Todos os prazos do período já possuem alertas agendados");
+      fetchAgenda();
+    } catch (e) {
+      setAgendaMsg(e instanceof Error ? e.message : "Erro ao agendar alertas");
+    }
+  };
+
+  useEffect(() => { fetchData(); fetchAlertas(); fetchAgenda(); }, [fetchData, fetchAlertas, fetchAgenda]);
 
   const handleRegistrar = async () => {
     if (!selectedEdital) return;
@@ -267,14 +298,95 @@ export function FollowupPage(_props?: PageProps) {
     </div>
   );
 
+  // RF-ALE-001/002 — aba de agenda com contagem regressiva + exportação ICS
+  const URGENCIA_CORES: Record<string, string> = {
+    critico: "#dc2626", atencao: "#eab308", confortavel: "#16a34a", encerrado: "#6b7280",
+  };
+  const URGENCIA_LABELS: Record<string, string> = {
+    critico: "Crítico (<24h)", atencao: "Atenção (<72h)", confortavel: "Confortável",
+  };
+  const tabAgenda = (
+    <div>
+      <div style={{ display: "flex", gap: 12, marginBottom: 16, alignItems: "center", flexWrap: "wrap" }}>
+        <ActionButton label="Agendar Alertas Automáticos" onClick={handleAgendarAutomatico} />
+        <ActionButton
+          label="Exportar Calendário (.ics)"
+          variant="secondary"
+          onClick={() => baixarCalendarioICS(30).catch((e) => setAgendaMsg(e.message))}
+        />
+        {agendaMsg && <span style={{ fontSize: 13, color: "#3b82f6" }}>{agendaMsg}</span>}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
+        {(["critico", "atencao", "confortavel"] as const).map((u) => (
+          <Card key={u}>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 11, color: "#9ca3af" }}>{URGENCIA_LABELS[u]}</div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: URGENCIA_CORES[u] }}>
+                {agenda.filter((ev) => ev.contagem.urgencia === u).length}
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      <Card>
+        <h3 style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+          <CalendarDays size={18} /> Próximos Prazos (30 dias)
+        </h3>
+        {agendaLoading ? (
+          <Loader2 className="animate-spin" />
+        ) : agenda.length === 0 ? (
+          <div style={{ color: "#6b7280", fontSize: 14 }}>
+            Nenhum prazo nos próximos 30 dias. Salve editais com data de abertura para vê-los aqui.
+          </div>
+        ) : (
+          agenda.map((ev) => (
+            <div
+              key={`${ev.edital_id}-${ev.tipo}`}
+              style={{
+                display: "flex", alignItems: "center", gap: 12, padding: "10px 12px",
+                borderLeft: `4px solid ${URGENCIA_CORES[ev.contagem.urgencia]}`,
+                background: "#f9fafb", borderRadius: 6, marginBottom: 8,
+              }}
+            >
+              <div style={{
+                minWidth: 86, textAlign: "center", fontWeight: 700, fontSize: 15,
+                color: URGENCIA_CORES[ev.contagem.urgencia],
+              }}>
+                {ev.contagem.texto}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>
+                  {ev.label} — {ev.edital_numero}
+                </div>
+                <div style={{ fontSize: 12, color: "#6b7280" }}>
+                  {ev.orgao}{ev.uf ? ` (${ev.uf})` : ""} · {new Date(ev.data_evento).toLocaleString("pt-BR")}
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: ev.alertas_agendados > 0 ? "#16a34a" : "#9ca3af" }}>
+                <Bell size={14} />
+                {ev.alertas_agendados > 0 ? `${ev.alertas_agendados} alerta(s)` : "sem alertas"}
+              </div>
+            </div>
+          ))
+        )}
+      </Card>
+      <div style={{ marginTop: 8, fontSize: 12, color: "#9ca3af", display: "flex", alignItems: "center", gap: 6 }}>
+        <Download size={12} /> O arquivo .ics pode ser importado no Google Calendar, Outlook ou Apple Calendar.
+      </div>
+    </div>
+  );
+
   return (
     <div style={{ padding: 24 }}>
       <h2 style={{ marginBottom: 20, fontSize: 22, fontWeight: 700 }}>Follow-up de Resultados</h2>
       <TabPanel tabs={[
         { id: "resultados", label: "Resultados" },
+        { id: "agenda", label: "Agenda de Pregões" },
         { id: "alertas", label: "Alertas" },
       ]}>
-        {(activeTab) => activeTab === "resultados" ? tabResultados : tabAlertas}
+        {(activeTab) => activeTab === "resultados" ? tabResultados : activeTab === "agenda" ? tabAgenda : tabAlertas}
       </TabPanel>
 
       {showModal && selectedEdital && (

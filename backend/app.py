@@ -114,6 +114,10 @@ app.register_blueprint(crm_bp)
 from inteligencia_comercial import intel_bp
 app.register_blueprint(intel_bp)
 
+# Fase 2 — Alertas de Pregão (RF-ALE-001/002: agenda regressiva + ICS)
+from alertas_pregao import alertas_bp
+app.register_blueprint(alertas_bp)
+
 # Sprint 6 — Audit middleware
 from audit_middleware import register_audit_hooks
 register_audit_hooks(app)
