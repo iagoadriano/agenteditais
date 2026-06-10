@@ -1192,7 +1192,7 @@ export function CaptacaoPage(props?: PageProps) {
       if (!editalId) {
         // Verificar se já existe um edital temp_score com mesmo número+órgão
         try {
-          const existentes = await crudList("editais", { q: edital.numero });
+          const existentes = await crudList("editais", { q: edital.numero, limit: 5 });
           const tempExistente = (existentes.items || []).find(
             (e: Record<string, unknown>) => e.numero === edital.numero && e.orgao === edital.orgao
           );

@@ -283,7 +283,7 @@ export function PrecificacaoPage(props?: PageProps) {
       const camadasMap: Record<string, PrecoCamada> = {};
       for (const v of vinculosFiltrados) {
         try {
-          const pcRes = await crudList("preco-camadas", { edital_item_produto_id: v.id, limit: 1 });
+          const pcRes = await crudList("preco-camadas", { parent_id: v.id, limit: 1 });
           if (pcRes.items?.length > 0) camadasMap[v.id] = pcRes.items[0] as unknown as PrecoCamada;
         } catch { /* ignore */ }
       }
@@ -315,7 +315,7 @@ export function PrecificacaoPage(props?: PageProps) {
     if (!vinculoId) { setCamada(null); return; }
     (async () => {
       try {
-        const res = await crudList("preco-camadas", { edital_item_produto_id: vinculoId, limit: 1 });
+        const res = await crudList("preco-camadas", { parent_id: vinculoId, limit: 1 });
         const items = res.items as unknown as PrecoCamada[];
         if (items.length > 0) {
           const c = items[0];
@@ -528,7 +528,7 @@ export function PrecificacaoPage(props?: PageProps) {
       if (!existente) {
         // Tentar buscar no banco (pode existir mas não estar no state filtrado)
         try {
-          const dbRes = await crudList("edital-item-produto", { edital_item_id: selecaoItemId, limit: 1 });
+          const dbRes = await crudList("edital-item-produto", { parent_id: selecaoItemId, limit: 1 });
           const dbItems = (dbRes.items || []) as unknown as Vinculo[];
           if (dbItems.length > 0) existente = dbItems[0];
         } catch { /* ignore */ }
@@ -616,7 +616,7 @@ export function PrecificacaoPage(props?: PageProps) {
 
   // Helper: recarregar camada do banco e atualizar todasCamadas
   const _recarregarCamada = async () => {
-    const res = await crudList("preco-camadas", { edital_item_produto_id: vinculoId, limit: 1 });
+    const res = await crudList("preco-camadas", { parent_id: vinculoId, limit: 1 });
     if (res.items?.length > 0) {
       const c = res.items[0] as unknown as PrecoCamada;
       setCamada(c);

@@ -659,6 +659,9 @@ CRUD_TABLES = {
     "edital-item-produto": {
         "model": EditalItemProduto,
         "empresa_scoped": True,
+        # parent_id => filtra por item do edital (PrecificacaoPage busca o vinculo de 1 item)
+        "parent_fk": "edital_item_id",
+        "parent_model": EditalItem,
         "search_fields": [],
         "label": "Vínculo Item-Produto",
         "required": ["edital_item_id", "produto_id"],
@@ -666,6 +669,9 @@ CRUD_TABLES = {
     "preco-camadas": {
         "model": PrecoCamada,
         "empresa_scoped": True,
+        # parent_id => filtra pela camada do vinculo certo (antes retornava a 1a da empresa)
+        "parent_fk": "edital_item_produto_id",
+        "parent_model": EditalItemProduto,
         "search_fields": [],
         "label": "Camada de Preço",
         "required": ["edital_item_produto_id"],

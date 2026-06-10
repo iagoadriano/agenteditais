@@ -206,7 +206,7 @@ export function ProducaoPage(_props?: PageProps) {
     setSelectedContrato(c);
     // Fetch entregas
     try {
-      const res = await crudList("contrato-entregas", { limit: 100 });
+      const res = await crudList("contrato-entregas", { parent_id: c.id, limit: 100 });
       setEntregas((res.items || []) as unknown as EntregaAPI[]);
     } catch (e) { console.error(e); }
     // Fetch cronograma

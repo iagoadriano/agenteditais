@@ -85,10 +85,9 @@ export function MonitoriaPage({ onSendToChat }: PageProps) {
         ? [monitoramentos.find(m => m.id === filtroMonEvento)?.termo].filter(Boolean)
         : monitoramentos.filter(m => m.ativo).map(m => m.termo);
       const allEditais: EditalEvento[] = [];
-      for (const _termo of termos) {
-        // NOTA: o parametro de busca por termo nunca chegava ao backend
-        // (crudList nao serializa "search"); o filtro provavelmente deveria usar "q".
-        const res = await crudList("editais", { limit: 50 });
+      for (const termo of termos) {
+        // busca editais que casam com o termo monitorado (numero/orgao/objeto/uf/cidade)
+        const res = await crudList("editais", { q: termo, limit: 50 });
         (res.items || []).forEach((ed: any) => {
           if (!allEditais.find(e => e.id === ed.id)) {
             allEditais.push({ id: ed.id, numero: ed.numero || ed.id, orgao: ed.orgao, uf: ed.uf, modalidade: ed.modalidade, created_at: ed.created_at });

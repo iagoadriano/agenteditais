@@ -80,9 +80,6 @@ export async function crudList(
     parent_id?: string;
     limit?: number;
     offset?: number;
-    /** Filtros por FK usados por algumas páginas (ex.: PrecificacaoPage) */
-    edital_item_id?: string;
-    edital_item_produto_id?: string;
   }
 ): Promise<CrudListResponse> {
   const headers = await getAuthHeaders();
