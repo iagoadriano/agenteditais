@@ -110,6 +110,10 @@ app.register_blueprint(empenho_bp)
 from crm_routes import crm_bp
 app.register_blueprint(crm_bp)
 
+# Fase 2 — Inteligência Comercial (RF-CLA, RF-SCO-002/003, RF-PRE)
+from inteligencia_comercial import intel_bp
+app.register_blueprint(intel_bp)
+
 # Sprint 6 — Audit middleware
 from audit_middleware import register_audit_hooks
 register_audit_hooks(app)

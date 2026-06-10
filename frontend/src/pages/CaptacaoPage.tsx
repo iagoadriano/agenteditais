@@ -10,6 +10,7 @@ import {
 import type { Column } from "../components/common";
 import { crudList, crudCreate, crudUpdate, crudDelete } from "../api/crud";
 import { getScoreCompetitividade } from "../api/sprint9";
+import InteligenciaComercialPanel from "../components/InteligenciaComercialPanel";
 
 // --- Interfaces ---
 
@@ -2503,6 +2504,11 @@ function baixarMD() {
                       )}
                     </div>
                   </div>
+
+                  {/* Fase 2 — Inteligência Comercial (RF-CLA, RF-SCO, RF-PRE) */}
+                  <InteligenciaComercialPanel
+                    editalId={painelEdital.editalSalvoId || (painelEdital.id.length === 36 ? painelEdital.id : null)}
+                  />
 
                   {/* Score principal — só mostra se busca usou score */}
                   {tipoScore !== "nenhum" && (
