@@ -353,6 +353,11 @@ Analise a mensagem do usuário e classifique em UMA das categorias abaixo:
     Exemplos: "cancele alertas do PE-001", "remova meus alertas", "desative alertas"
     Palavras-chave: cancelar alerta, remover alerta, desativar alerta
 
+### FASE 2 — INTELIGÊNCIA COMERCIAL:
+40b. **score_comercial**: Score de aderência comercial GO/NO-GO de um edital (logística, porte, histórico, prazo)
+    Exemplos: "vale a pena participar do PE-001?", "score comercial do edital PE-123/2026", "GO ou NO-GO para o pregão 45/2026?"
+    Palavras-chave: score comercial, vale a pena participar, go ou no-go, go/no-go, aderência comercial
+
 ### FASE 1 — PRECIFICAÇÃO:
 41b. **precif_organizar_lotes**: Organizar itens do edital em lotes
     Exemplos: "organize os lotes do edital PE-001", "importe itens do PNCP e crie lotes", "crie lotes para o edital"
@@ -607,6 +612,12 @@ def detectar_intencao_fallback(message: str) -> str:
     if any(p in msg for p in ["analisar concorrente", "analise concorrente", "análise concorrente",
                                "analise o concorrente", "histórico concorrente", "historico concorrente"]):
         return "analisar_concorrente"
+
+    # FASE 2 — Score comercial GO/NO-GO (antes de recomendar_preco: "vale a pena" não é preço)
+    if any(p in msg for p in ["score comercial", "vale a pena participar", "go ou no-go",
+                               "go ou no go", "go/no-go", "go/no go",
+                               "aderência comercial", "aderencia comercial"]):
+        return "score_comercial"
 
     # 5.4.5 Recomendar preço (Funcionalidade 7 Sprint 1)
     if any(p in msg for p in ["recomendar preço", "recomendar preco", "sugerir preço", "sugerir preco",
@@ -1614,6 +1625,9 @@ def chat():
 
         elif action_type == "classificar_edital":
             response_text, resultado = processar_classificar_edital(message, user_id)
+
+        elif action_type == "score_comercial":
+            response_text, resultado = processar_score_comercial(message, user_id, empresa_id)
 
         elif action_type == "verificar_completude":
             response_text, resultado = processar_verificar_completude(message, user_id)
@@ -5739,6 +5753,57 @@ def processar_classificar_edital(message: str, user_id: str):
 
 **Justificativa:** {resultado.get('justificativa', 'N/A')}
 """
+    return response, resultado
+
+
+# ==================== FASE 2 — SCORE COMERCIAL GO/NO-GO ====================
+
+def processar_score_comercial(message: str, user_id: str, empresa_id: str = None):
+    """Processa pedido de score de aderência comercial (RF-SCO-002/003)."""
+    import re
+    from tools import tool_score_comercial
+
+    # Mesmo padrão de extração usado em processar_configurar_alertas
+    match_edital = re.search(
+        r'(PE[-\s]?[\w]+[-/]?\d*|[Pp]reg[aã]o\s*n?[ºo°]?\s*[\w/]+|\d{1,5}[/]\d{4})',
+        message, re.IGNORECASE)
+    edital_numero = match_edital.group(1).strip() if match_edital else None
+
+    if not edital_numero:
+        return ("⚠️ Para calcular o score comercial, preciso saber qual edital. "
+                "Informe o número, por exemplo:\n\n"
+                "*\"Vale a pena participar do PE 123/2026?\"*"), {"success": False}
+
+    resultado = tool_score_comercial(
+        user_id=user_id, empresa_id=empresa_id, edital_numero=edital_numero)
+
+    if not resultado.get("success"):
+        return (f"## ❌ Score Comercial\n\n"
+                f"**Erro:** {resultado.get('error', 'Não foi possível calcular')}"), resultado
+
+    emoji_rec = {"GO": "🟢", "AVALIAR": "🟡", "NO_GO": "🔴"}
+    rec = resultado.get("recomendacao", "AVALIAR")
+    comp = resultado.get("componentes", {})
+    nomes = [("logistico", "🚚 Logística"), ("porte", "🏢 Porte x Valor"),
+             ("historico", "📊 Histórico"), ("prazo", "⏰ Prazo")]
+
+    response = f"""## {emoji_rec.get(rec, '🟡')} Score Comercial — {resultado.get('edital_numero')}
+
+**Órgão:** {resultado.get('orgao')}{f" ({resultado.get('uf')})" if resultado.get('uf') else ""}
+
+**Score final:** {resultado.get('score_final')}/100 → **{rec.replace('_', ' ')}**
+
+---
+
+### Componentes
+
+"""
+    for chave, label in nomes:
+        c = comp.get(chave, {})
+        response += f"- {label}: **{c.get('score', '—')}** — {c.get('motivo', '')}\n"
+
+    response += ("\n---\n\n*Score consultivo: pondera logística (30%), porte (20%), "
+                 "histórico (35%) e prazo (15%). A decisão final é sua.*")
     return response, resultado
 
 

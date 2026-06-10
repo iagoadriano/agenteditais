@@ -283,6 +283,47 @@ def calcular_score_prazo(dias_ate_abertura):
     return {"score": 20, "motivo": f"{dias_ate_abertura} dia(s) até a abertura — prazo crítico"}
 
 
+def avaliar_score_comercial(db, edital, empresa, empresa_id=None):
+    """
+    Computa o score comercial completo de um edital (componentes + final).
+    Compartilhado pela rota REST e pela tool de chat. `empresa_id` filtra o
+    histórico de PrecoHistorico (None = sem filtro, ex.: superuser).
+    """
+    logistico = calcular_score_logistico(
+        empresa.uf if empresa else None, edital.uf,
+        empresa.cidade if empresa else None, edital.cidade,
+    )
+    porte = calcular_score_porte(
+        empresa.porte if empresa else None, edital.valor_referencia)
+
+    # Histórico: PrecoHistorico da empresa com resultado conhecido
+    hist_q = db.query(PrecoHistorico).filter(
+        PrecoHistorico.resultado.in_(["vitoria", "derrota"]))
+    if empresa_id:
+        hist_q = hist_q.filter(PrecoHistorico.empresa_id == empresa_id)
+    registros = hist_q.all()
+    participacoes = len(registros)
+    vitorias = sum(1 for r in registros if r.resultado == "vitoria")
+
+    # Subconjunto similar: mesmo órgão ou mesma UF do edital avaliado
+    similares = []
+    for r in registros:
+        e = db.query(Edital).filter(Edital.id == r.edital_id).first() \
+            if r.edital_id else None
+        if e and (e.orgao == edital.orgao or (e.uf and e.uf == edital.uf)):
+            similares.append(r)
+    historico = calcular_score_historico(
+        participacoes, vitorias,
+        len(similares), sum(1 for r in similares if r.resultado == "vitoria"))
+
+    dias = None
+    if edital.data_abertura:
+        dias = (edital.data_abertura - datetime.now()).days
+    prazo = calcular_score_prazo(dias)
+
+    return calcular_score_comercial(logistico, porte, historico, prazo)
+
+
 def calcular_score_comercial(logistico, porte, historico, prazo):
     """Pondera os 4 componentes e emite recomendação GO / AVALIAR / NO_GO."""
     final = (
@@ -513,39 +554,8 @@ def score_comercial(edital_id):
             return jsonify({"error": "Edital não encontrado"}), 404
         empresa = _get_empresa(db)
 
-        logistico = calcular_score_logistico(
-            empresa.uf if empresa else None, edital.uf,
-            empresa.cidade if empresa else None, edital.cidade,
-        )
-        porte = calcular_score_porte(
-            empresa.porte if empresa else None, edital.valor_referencia)
-
-        # Histórico: PrecoHistorico da empresa com resultado conhecido
-        hist_q = db.query(PrecoHistorico).filter(
-            PrecoHistorico.resultado.in_(["vitoria", "derrota"]))
-        if not request.is_super and request.empresa_id:
-            hist_q = hist_q.filter(PrecoHistorico.empresa_id == request.empresa_id)
-        registros = hist_q.all()
-        participacoes = len(registros)
-        vitorias = sum(1 for r in registros if r.resultado == "vitoria")
-
-        # Subconjunto similar: mesmo órgão ou mesma UF do edital avaliado
-        similares = []
-        for r in registros:
-            e = db.query(Edital).filter(Edital.id == r.edital_id).first() \
-                if r.edital_id else None
-            if e and (e.orgao == edital.orgao or (e.uf and e.uf == edital.uf)):
-                similares.append(r)
-        historico = calcular_score_historico(
-            participacoes, vitorias,
-            len(similares), sum(1 for r in similares if r.resultado == "vitoria"))
-
-        dias = None
-        if edital.data_abertura:
-            dias = (edital.data_abertura - datetime.now()).days
-        prazo = calcular_score_prazo(dias)
-
-        resultado = calcular_score_comercial(logistico, porte, historico, prazo)
+        empresa_id_filtro = None if request.is_super else request.empresa_id
+        resultado = avaliar_score_comercial(db, edital, empresa, empresa_id_filtro)
         resultado.update({
             "success": True,
             "edital_id": edital.id,
