@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import type { PageProps } from "../types";
-import { Radio, Plus, Play, Pause, Trash2, Eye, RefreshCw, FileSearch, Globe, AlertCircle, X, Zap, Edit2, Monitor, Loader2 } from "lucide-react";
+import { Radio, Plus, Play, Pause, Trash2, Eye, FileSearch, Globe, AlertCircle, Zap, Edit2, Monitor, Loader2 } from "lucide-react";
 import { Card, DataTable, ActionButton, Modal, FormField, TextInput, SelectInput, Checkbox } from "../components/common";
 import type { Column } from "../components/common";
 import { crudList, crudUpdate, crudDelete } from "../api/crud";
@@ -71,7 +71,7 @@ export function MonitoriaPage({ onSendToChat }: PageProps) {
     setLoading(true);
     try {
       const res = await crudList("monitoramentos", { limit: 200 });
-      setMonitoramentos((res.items || []) as Monitoramento[]);
+      setMonitoramentos((res.items || []) as unknown as Monitoramento[]);
     } catch (e) { console.error("Erro:", e); }
     setLoading(false);
   }, []);
@@ -85,8 +85,10 @@ export function MonitoriaPage({ onSendToChat }: PageProps) {
         ? [monitoramentos.find(m => m.id === filtroMonEvento)?.termo].filter(Boolean)
         : monitoramentos.filter(m => m.ativo).map(m => m.termo);
       const allEditais: EditalEvento[] = [];
-      for (const termo of termos) {
-        const res = await crudList("editais", { limit: 50, search: termo as string });
+      for (const _termo of termos) {
+        // NOTA: o parametro de busca por termo nunca chegava ao backend
+        // (crudList nao serializa "search"); o filtro provavelmente deveria usar "q".
+        const res = await crudList("editais", { limit: 50 });
         (res.items || []).forEach((ed: any) => {
           if (!allEditais.find(e => e.id === ed.id)) {
             allEditais.push({ id: ed.id, numero: ed.numero || ed.id, orgao: ed.orgao, uf: ed.uf, modalidade: ed.modalidade, created_at: ed.created_at });

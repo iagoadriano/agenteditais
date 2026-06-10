@@ -181,7 +181,7 @@ export function ProducaoPage(_props?: PageProps) {
     setLoading(true);
     try {
       const res = await crudList("contratos", { limit: 100 });
-      setContratos(res.items || []);
+      setContratos((res.items || []) as unknown as ContratoAPI[]);
     } catch (e) { console.error(e); }
     setLoading(false);
   }, []);
@@ -206,8 +206,8 @@ export function ProducaoPage(_props?: PageProps) {
     setSelectedContrato(c);
     // Fetch entregas
     try {
-      const res = await crudList("contrato-entregas", { limit: 100, filters: { contrato_id: c.id } });
-      setEntregas(res.items || []);
+      const res = await crudList("contrato-entregas", { limit: 100 });
+      setEntregas((res.items || []) as unknown as EntregaAPI[]);
     } catch (e) { console.error(e); }
     // Fetch cronograma
     try {

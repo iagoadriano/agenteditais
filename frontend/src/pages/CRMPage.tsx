@@ -132,14 +132,14 @@ export function CRMPage(_props?: PageProps) {
   const fetchParametrizacoes = useCallback(async () => {
     try {
       const res = await crudList("crm-parametrizacoes", { limit: 500 });
-      setParametrizacoes(res.items || []);
+      setParametrizacoes((res.items || []) as unknown as CRMParametrizacao[]);
     } catch (e) { console.error(e); }
   }, []);
 
   const fetchDecisoes = useCallback(async () => {
     try {
       const res = await crudList("edital-decisoes", { limit: 200 });
-      setDecisoes(res.items || []);
+      setDecisoes((res.items || []) as unknown as EditalDecisao[]);
     } catch (e) { console.error(e); }
   }, []);
 

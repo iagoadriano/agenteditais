@@ -6,7 +6,7 @@ import {
   TrendingUp, Scale, AlertTriangle, XCircle, Settings, Building,
   Briefcase, Sliders, GitBranch, Database, Shield, Layers, FileCheck,
   Bell, Mail, Target, BookOpen, Zap, Globe, UserPlus, FolderTree, Tag, Tags,
-  Brain, Activity
+  Brain
 } from "lucide-react";
 
 interface User {

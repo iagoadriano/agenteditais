@@ -10,7 +10,7 @@ import {
   Database, BookOpen, Target, Zap, Globe, UserPlus, FolderTree, Tag, Tags, GitBranch,
   Plus, Trash2
 } from "lucide-react";
-import type { CrudPageConfig, FieldConfig } from "../components/CrudPage";
+import type { CrudPageConfig } from "../components/CrudPage";
 import { crudList, crudCreate, crudUpdate, crudDelete } from "../api/crud";
 
 // ─── Editor visual de campos_mascara ──────────────────────────────────────────
@@ -572,7 +572,7 @@ function ProdutoEditForm({ item, onSaved, onCancel }: { item: Record<string, unk
   const [modelo, setModelo] = React.useState(String(item.modelo || ""));
   const [ncm, setNcm] = React.useState(String(item.ncm || ""));
   const [precoRef, setPrecoRef] = React.useState(item.preco_referencia != null ? String(item.preco_referencia) : "");
-  const [categoria, setCategoria] = React.useState(String(item.categoria || ""));
+  const [categoria] = React.useState(String(item.categoria || ""));
   const [descricao, setDescricao] = React.useState(String(item.descricao || ""));
   const [statusPipeline, setStatusPipeline] = React.useState(String(item.status_pipeline || "cadastrado"));
   const [registroAnvisa, setRegistroAnvisa] = React.useState(String(item.registro_anvisa || ""));
@@ -581,8 +581,6 @@ function ProdutoEditForm({ item, onSaved, onCancel }: { item: Record<string, unk
   const [deleting, setDeleting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [loaded, setLoaded] = React.useState(false);
-
-  const CATEGORIAS = ["equipamento", "reagente", "insumo_hospitalar", "insumo_laboratorial", "informatica", "redes", "mobiliario", "eletronico", "outro"];
 
   // Carregar hierarquia + specs existentes
   React.useEffect(() => {
