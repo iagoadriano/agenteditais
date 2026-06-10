@@ -1,0 +1,42 @@
+# nginx — serve o build do frontend e faz proxy da API.
+# Copie para /etc/nginx/sites-available/editais e ajuste server_name e caminhos.
+#
+#   sudo apt install -y nginx
+#   sudo cp deploy/nginx.conf.example /etc/nginx/sites-available/editais
+#   sudo ln -s /etc/nginx/sites-available/editais /etc/nginx/sites-enabled/
+#   sudo rm -f /etc/nginx/sites-enabled/default
+#   sudo nginx -t && sudo systemctl reload nginx
+#
+# HTTPS (recomendado): sudo apt install -y certbot python3-certbot-nginx
+#                      sudo certbot --nginx -d seudominio.com.br
+
+server {
+    listen 80;
+    server_name _;  # troque pelo seu domínio ou IP
+
+    # Frontend (build do Vite)
+    root /opt/editais/frontend/dist;
+    index index.html;
+
+    # SPA: rotas do React caem no index.html
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # API -> backend Flask na 5007
+    location /api/ {
+        proxy_pass http://127.0.0.1:5007;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 300s;   # ações com IA podem demorar
+        client_max_body_size 50m;  # upload de PDFs de edital
+    }
+
+    # Arquivos enviados
+    location /uploads/ {
+        proxy_pass http://127.0.0.1:5007;
+        proxy_set_header Host $host;
+        client_max_body_size 50m;
+    }
+}

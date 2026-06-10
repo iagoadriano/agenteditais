@@ -14,15 +14,17 @@ FAISS_INDEX_PATH = str(Path(__file__).parent.parent / "faiss_index_editais")
 EMBEDDINGS_MODEL = "intfloat/multilingual-e5-base"
 
 # MySQL - Banco "editais"
-MYSQL_HOST = os.getenv("MYSQL_HOST", "camerascasas.no-ip.info")
-MYSQL_PORT = int(os.getenv("MYSQL_PORT", "3308"))
-MYSQL_USER = os.getenv("MYSQL_USER", "producao")
-MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "112358123")
+# Defaults apontam para banco local; configure no .env (ver .env.example na raiz)
+MYSQL_HOST = os.getenv("MYSQL_HOST", "127.0.0.1")
+MYSQL_PORT = int(os.getenv("MYSQL_PORT", "3306"))
+MYSQL_USER = os.getenv("MYSQL_USER", "editais")
+MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "")
 MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "editais")
 MYSQL_URI = f"mysql+mysqlconnector://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}?charset=utf8mb4"
 
 # JWT
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "editais-ia-secret-key-change-in-production-2024")
+# OBRIGATORIO definir no .env em producao (default e apenas para dev local)
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-only-secret-defina-JWT_SECRET_KEY-no-env")
 JWT_ACCESS_TOKEN_EXPIRES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES", "3600"))  # 1 hour
 JWT_REFRESH_TOKEN_EXPIRES = int(os.getenv("JWT_REFRESH_TOKEN_EXPIRES", "2592000"))  # 30 days
 
@@ -72,7 +74,7 @@ CAPSOLVER_API_KEY = os.getenv("CAPSOLVER_API_KEY", "")
 CRYPTO_KEY = os.getenv("CRYPTO_KEY", "")
 
 # MindsDB (Consultas analíticas via linguagem natural)
-MINDSDB_HOST = os.getenv("MINDSDB_HOST", "192.168.1.100")
+MINDSDB_HOST = os.getenv("MINDSDB_HOST", "127.0.0.1")
 MINDSDB_PORT = os.getenv("MINDSDB_PORT", "47334")
 MINDSDB_USER = os.getenv("MINDSDB_USER", "mindsdb")
 MINDSDB_PASSWORD = os.getenv("MINDSDB_PASSWORD", "")

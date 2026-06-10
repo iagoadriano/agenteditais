@@ -1,3 +1,4 @@
+import { APP_NAME, APP_TAGLINE } from "../config/branding";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useAuth } from "../contexts/AuthContext";
@@ -113,8 +114,8 @@ export function LoginPage({ onSwitchToRegister }: LoginPageProps) {
       <div className="login-container">
         <div className="login-header">
           <FileText size={48} className="login-icon" />
-          <h1>Agente Editais</h1>
-          <p>Assistente para análise de editais e licitações públicas</p>
+          <h1>{APP_NAME}</h1>
+          <p>{APP_TAGLINE}</p>
         </div>
 
         <form className="login-form" onSubmit={handleSubmit}>

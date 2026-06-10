@@ -1,0 +1,25 @@
+# systemd unit do backend Flask — copie para /etc/systemd/system/editais-backend.service
+# Ajuste User e os caminhos para o local do projeto no seu servidor.
+#
+#   sudo cp deploy/editais-backend.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now editais-backend
+#   journalctl -u editais-backend -f   # logs
+
+[Unit]
+Description=Backend Flask - plataforma de licitacoes
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/editais/backend
+# venv criado em /opt/editais/venv (ver docs/DEPLOY.md)
+ExecStart=/opt/editais/venv/bin/python app.py
+Restart=always
+RestartSec=5
+# .env fica na raiz do projeto e é lido pelo config.py automaticamente
+
+[Install]
+WantedBy=multi-user.target

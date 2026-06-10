@@ -1,3 +1,4 @@
+import { APP_NAME } from "../config/branding";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useAuth } from "../contexts/AuthContext";
@@ -52,7 +53,7 @@ export function RegisterPage({ onSwitchToLogin }: RegisterPageProps) {
         <div className="login-header">
           <FileText size={48} className="login-icon" />
           <h1>Criar Conta</h1>
-          <p>Cadastre-se para usar o Agente Editais</p>
+          <p>Cadastre-se para usar o {APP_NAME}</p>
         </div>
 
         <form className="login-form" onSubmit={handleSubmit}>

@@ -1,3 +1,4 @@
+import { APP_NAME } from "../config/branding";
 import { useState, useEffect } from "react";
 import {
   LogOut, User as UserIcon, ChevronDown, ChevronRight,
@@ -332,8 +333,8 @@ export function Sidebar({
       {/* Header com logo */}
       <div className="sidebar-header">
         <div className="sidebar-logo" onClick={() => onNavigate('dashboard')}>
-          <span className="logo-icon">F</span>
-          <h1>facilicita.ia</h1>
+          <span className="logo-icon">{APP_NAME.charAt(0)}</span>
+          <h1>{APP_NAME.toLowerCase()}</h1>
         </div>
       </div>
 

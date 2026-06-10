@@ -9,9 +9,9 @@ export default defineConfig({
     port: 5180,
     cors: true,
     // Vite 8.x: 'all' como string nao funciona — usar array com hostnames + wildcards.
-    allowedHosts: ['.no-ip.info', '.ngrok.io', '.ngrok-free.app', '.servehttp.com',
-                   'localhost', '127.0.0.1', '0.0.0.0',
-                   'pasteurjr.servehttp.com', 'camerascasas.no-ip.info'],
+    // Hosts extras (dominio proprio, tunel) via env: VITE_ALLOWED_HOSTS="meuapp.com.br,.ngrok.io"
+    allowedHosts: ['localhost', '127.0.0.1', '0.0.0.0',
+                   ...(process.env.VITE_ALLOWED_HOSTS?.split(',').map(h => h.trim()).filter(Boolean) ?? [])],
     proxy: {
       '/api': 'http://localhost:5007',
       '/uploads': 'http://localhost:5007',
